@@ -21,6 +21,7 @@
 
 #include "gstm3u8playlist.h"
 #include <gst/gst.h>
+#include <gst/baseadaptive/gstbaseadaptivesink.h>
 
 G_BEGIN_DECLS
 
@@ -36,31 +37,15 @@ typedef struct _GstHlsSinkClass GstHlsSinkClass;
 
 struct _GstHlsSink
 {
-  GstBin bin;
+  GstBaseAdaptiveSink parent;
 
-  GstPad *ghostpad;
-  GstElement *multifilesink;
-  gboolean elements_created;
-  GstEvent *force_key_unit_event;
-
-  gchar *location;
-  gchar *playlist_location;
-  gchar *playlist_root;
-  guint playlist_length;
-  GstM3U8Playlist *playlist;
-  guint index;
-  gint max_files;
-  gint target_duration;
-  gint count;
-  guint timeout_id;
-  GstSegment segment;
-  gboolean waiting_fku;
-  GstClockTime last_running_time;
+  gchar *stream_title;
+  guint max_version;
 };
 
 struct _GstHlsSinkClass
 {
-  GstBinClass bin_class;
+  GstBaseAdaptiveSinkClass parent_class;
 };
 
 GType gst_hls_sink_get_type (void);

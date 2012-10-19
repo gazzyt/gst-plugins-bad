@@ -4,9 +4,11 @@ plugin_LTLIBRARIES = libgsthls.la
 libgsthls_la_SOURCES =			\
 	m3u8.c					\
 	gsthlsdemux.c				\
+<<<<<<< cd8539cff501be47229967f3a891fd86633b8064
 	gsthlsdemux-util.c  \
 	gsthlsplugin.c 			\
 	gsthlssink.c 				\
+	gstm3u8manager.c			\
 	gstm3u8playlist.c
 
 libgsthls_la_CFLAGS = $(GST_PLUGINS_BAD_CFLAGS) $(GST_PLUGINS_BASE_CFLAGS) $(GST_BASE_CFLAGS) $(GST_CFLAGS) $(LIBGCRYPT_CFLAGS) $(NETTLE_CFLAGS) $(OPENSSL_CFLAGS)
@@ -14,7 +16,9 @@ libgsthls_la_LIBADD = \
 	$(top_builddir)/gst-libs/gst/uridownloader/libgsturidownloader-@GST_API_VERSION@.la \
         $(top_builddir)/gst-libs/gst/adaptivedemux/libgstadaptivedemux-@GST_API_VERSION@.la \
 	$(GST_PLUGINS_BASE_LIBS) -lgstpbutils-$(GST_API_VERSION) -lgstvideo-$(GST_API_VERSION) -lgsttag-$(GST_API_VERSION) \
-	$(GST_BASE_LIBS) $(GST_LIBS) $(LIBM) $(LIBGCRYPT_LIBS) $(NETTLE_LIBS) $(OPENSSL_LIBS)
+	$(GST_BASE_LIBS) $(GST_LIBS) $(LIBM) $(LIBGCRYPT_LIBS) $(NETTLE_LIBS) $(OPENSSL_LIBS) \
+	$(top_builddir)/gst-libs/gst/baseadaptive/libgstbaseadaptive-$(GST_API_VERSION).la
+
 libgsthls_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS) -no-undefined
 libgsthls_la_LIBTOOLFLAGS = $(GST_PLUGIN_LIBTOOLFLAGS)
 
@@ -23,5 +27,6 @@ noinst_HEADERS = 			\
 	gsthls.h			\
 	gsthlsdemux.h			\
 	gsthlssink.h			\
+	gstm3u8manager.h		\
 	gstm3u8playlist.h		\
 	m3u8.h
