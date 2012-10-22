@@ -156,7 +156,6 @@ gst_m3u8_playlist_target_duration (GstM3U8Playlist * playlist)
   return target_duration;
 }
 
-gboolean
 gst_m3u8_playlist_add_entry (GstM3U8Playlist * playlist,
     gchar * path, GFile * file, gchar * title,
     gfloat duration, guint length, guint offset, guint index,
@@ -178,8 +177,7 @@ gst_m3u8_playlist_add_entry (GstM3U8Playlist * playlist,
 
   if (playlist->window_size != 0) {
     /* Delete old entries from the playlist */
-    while (gst_m3u8_playlist_target_duration (playlist) >=
-        playlist->window_size) {
+    while (gst_m3u8_playlist_duration (playlist) >= playlist->window_size) {
       GstM3U8Entry *old_entry;
 
       old_entry = g_queue_pop_head (playlist->entries);
