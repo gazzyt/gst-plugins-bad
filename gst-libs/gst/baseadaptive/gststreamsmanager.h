@@ -82,7 +82,7 @@ struct _GstStreamsManager
   gboolean with_headers;
   guint64 window_size;
 
-  GMutex *lock;
+  GMutex lock;
 };
 
 /**

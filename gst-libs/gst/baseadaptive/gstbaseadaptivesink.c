@@ -47,8 +47,8 @@
 GST_DEBUG_CATEGORY_STATIC (gst_base_adaptive_sink_debug);
 #define GST_CAT_DEFAULT gst_base_adaptive_sink_debug
 
-#define GST_PAD_DATA_LOCK(p) (g_mutex_lock(p->lock))
-#define GST_PAD_DATA_UNLOCK(p) (g_mutex_unlock(p->lock))
+#define GST_PAD_DATA_LOCK(p) (g_mutex_lock(&p->lock))
+#define GST_PAD_DATA_UNLOCK(p) (g_mutex_unlock(&p->lock))
 
 enum
 {
@@ -92,9 +92,9 @@ typedef struct
   GFile *init_segment;
   gboolean is_eos;
 
-  GMutex *lock;
-  GMutex *discover_lock;
-  GCond *discover_cond;
+  GMutex lock;
+  GMutex discover_lock;
+  GCond discover_cond;
 
   GstBuffer *streamheaders;
 } GstBaseAdaptivePadData;
@@ -155,9 +155,9 @@ gst_base_adaptive_sink_pad_data_new (GstPad * pad)
   pad_data->fragment = NULL;
   pad_data->cancellable = NULL;
   pad_data->streamheaders = NULL;
-  pad_data->lock = g_mutex_new ();
-  pad_data->discover_lock = g_mutex_new ();
-  pad_data->discover_cond = g_cond_new ();
+  g_mutex_init (&pad_data->lock);
+  g_mutex_init (&pad_data->discover_lock);
+  g_cond_init (&pad_data->discover_cond);
   pad_data->init_segment = FALSE;
   pad_data->is_eos = FALSE;
 
@@ -198,20 +198,9 @@ gst_base_adaptive_sink_pad_data_free (GstBaseAdaptivePadData * pad_data)
     pad_data->pad = NULL;
   }
 
-  if (pad_data->lock != NULL) {
-    g_mutex_free (pad_data->lock);
-    pad_data->lock = NULL;
-  }
-
-  if (pad_data->discover_lock != NULL) {
-    g_mutex_free (pad_data->discover_lock);
-    pad_data->discover_lock = NULL;
-  }
-
-  if (pad_data->discover_cond != NULL) {
-    g_cond_free (pad_data->discover_cond);
-    pad_data->discover_cond = NULL;
-  }
+  g_mutex_clear (&pad_data->lock);
+  g_mutex_clear (&pad_data->discover_lock);
+  g_cond_clear (&pad_data->discover_cond);
 
   if (pad_data->init_segment != NULL) {
     g_object_unref (pad_data->init_segment);
@@ -331,7 +320,7 @@ gst_base_adaptive_sink_class_init (GstBaseAdaptiveSinkClass * klass)
    */
   g_object_class_install_property (gobject_class, PROP_MAX_WINDOW,
       g_param_spec_uint ("max-window", "Max window",
-          "Maximum window for DVR", 0, 0, G_PARAM_READWRITE));
+          "Maximum window for DVR", 0, 0, 0, G_PARAM_READWRITE));
 
   /**
    * GstBaseAdaptiveSink:fragment-duration
@@ -1139,7 +1128,7 @@ on_new_decoded_pad_cb (GstElement * bin, GstPad * pad,
 static void
 on_drained_cb (GstElement * bin, GstBaseAdaptivePadData * pad_data)
 {
-  g_cond_signal (pad_data->discover_cond);
+  g_cond_signal (&pad_data->discover_cond);
 }
 
 static gboolean
@@ -1147,7 +1136,7 @@ gst_base_adaptive_sink_parse_stream (GstBaseAdaptiveSink * sink,
     GstBaseAdaptivePadData * pad_data)
 {
   GstElement *pipeline, *appsrc, *decodebin;
-  GTimeVal timeout;
+  gint64 end_time;
   gboolean ret = TRUE;
 
   GST_DEBUG_OBJECT (sink, "Demuxing first fragment");
@@ -1166,11 +1155,10 @@ gst_base_adaptive_sink_parse_stream (GstBaseAdaptiveSink * sink,
   if (sink->supported_caps != NULL)
     g_object_set (G_OBJECT (decodebin), "caps", sink->supported_caps, NULL);
 
-  g_get_current_time (&timeout);
-  g_time_val_add (&timeout, 5 * 1000 * 1000);
+  end_time = g_get_monotonic_time () + 5 * G_TIME_SPAN_SECOND;
 
   /* Push buffer and wait for the "drained" signal */
-  g_mutex_lock (pad_data->discover_lock);
+  g_mutex_lock (&pad_data->discover_lock);
 
   pad_data->decoded_caps = NULL;
 
@@ -1185,12 +1173,12 @@ gst_base_adaptive_sink_parse_stream (GstBaseAdaptiveSink * sink,
   gst_app_src_push_buffer (GST_APP_SRC (appsrc), pad_data->fragment);
   gst_app_src_end_of_stream (GST_APP_SRC (appsrc));
 
-  if (!g_cond_timed_wait (pad_data->discover_cond, pad_data->discover_lock,
-          &timeout)) {
+  if (!g_cond_wait_until (&pad_data->discover_cond, &pad_data->discover_lock,
+          end_time)) {
     GST_WARNING_OBJECT (sink, "Timed out decoding the fragment");
     ret = FALSE;
   }
-  g_mutex_unlock (pad_data->discover_lock);
+  g_mutex_unlock (&pad_data->discover_lock);
 
   /* Dispose the pipeline */
   gst_element_set_state (pipeline, GST_STATE_NULL);

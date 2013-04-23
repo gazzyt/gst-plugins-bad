@@ -46,7 +46,7 @@ gst_streams_manager_init (GstStreamsManager * man)
   man->finished = FALSE;
   man->with_headers = TRUE;
   man->window_size = 0;
-  man->lock = g_mutex_new ();
+  g_mutex_init (&man->lock);
 }
 
 GstStreamsManager *
@@ -75,10 +75,7 @@ gst_streams_manager_finalize (GObject * gobject)
     man->fragment_prefix = NULL;
   }
 
-  if (man->lock != NULL) {
-    g_mutex_free (man->lock);
-    man->lock = NULL;
-  }
+  g_mutex_clear (&man->lock);
 
   G_OBJECT_CLASS (gst_streams_manager_parent_class)->finalize (gobject);
 }
@@ -92,10 +89,10 @@ gst_streams_manager_render (GstStreamsManager * man, GstPad * pad,
 
   bclass = GST_STREAMS_MANAGER_GET_CLASS (man);
 
-  g_mutex_lock (man->lock);
+  g_mutex_lock (&man->lock);
   if (bclass->render != NULL)
     ret = bclass->render (man, pad, file);
-  g_mutex_unlock (man->lock);
+  g_mutex_unlock (&man->lock);
 
   return ret;
 }
@@ -113,10 +110,10 @@ gst_streams_manager_add_stream (GstStreamsManager * man, GstPad * pad,
   bclass = GST_STREAMS_MANAGER_GET_CLASS (man);
 
   *rep_file = NULL;
-  g_mutex_lock (man->lock);
+  g_mutex_lock (&man->lock);
   if (bclass->add_stream != NULL)
     ret = bclass->add_stream (man, pad, avg_bitrate, substreams_caps, rep_file);
-  g_mutex_unlock (man->lock);
+  g_mutex_unlock (&man->lock);
 
   return ret;
 }
@@ -131,10 +128,10 @@ gst_streams_manager_eos (GstStreamsManager * man, GstPad * pad,
   bclass = GST_STREAMS_MANAGER_GET_CLASS (man);
 
   *rep_file = NULL;
-  g_mutex_lock (man->lock);
+  g_mutex_lock (&man->lock);
   if (bclass->eos != NULL)
     ret = bclass->eos (man, pad, rep_file);
-  g_mutex_unlock (man->lock);
+  g_mutex_unlock (&man->lock);
 
   return ret;
 }
@@ -152,10 +149,10 @@ gst_streams_manager_add_headers (GstStreamsManager * man,
 
   bclass = GST_STREAMS_MANAGER_GET_CLASS (man);
 
-  g_mutex_lock (man->lock);
+  g_mutex_lock (&man->lock);
   if (bclass->add_headers)
     ret = bclass->add_headers (man, pad, fragment);
-  g_mutex_unlock (man->lock);
+  g_mutex_unlock (&man->lock);
 
   return ret;
 }
@@ -177,11 +174,11 @@ gst_streams_manager_add_fragment (GstStreamsManager * man,
   *rep_file = NULL;
   *removed_fragments = NULL;
 
-  g_mutex_lock (man->lock);
+  g_mutex_lock (&man->lock);
   if (bclass->add_fragment)
     ret = bclass->add_fragment (man, pad, fragment, rep_file,
         removed_fragments);
-  g_mutex_unlock (man->lock);
+  g_mutex_unlock (&man->lock);
 
   return ret;
 }
@@ -241,10 +238,10 @@ gst_streams_manager_clear (GstStreamsManager * man)
 
   bclass = GST_STREAMS_MANAGER_GET_CLASS (man);
 
-  g_mutex_lock (man->lock);
+  g_mutex_lock (&man->lock);
   if (bclass->clear)
     bclass->clear (man);
-  g_mutex_unlock (man->lock);
+  g_mutex_unlock (&man->lock);
   return;
 }
 
