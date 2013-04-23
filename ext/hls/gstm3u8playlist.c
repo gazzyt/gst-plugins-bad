@@ -156,6 +156,22 @@ gst_m3u8_playlist_target_duration (GstM3U8Playlist * playlist)
   return target_duration;
 }
 
+static guint
+gst_m3u8_playlist_duration (GstM3U8Playlist * playlist)
+{
+  gint i;
+  GstM3U8Entry *entry;
+  gfloat duration = 0;
+
+  for (i = 0; i < playlist->entries->length; i++) {
+    entry = (GstM3U8Entry *) g_queue_peek_nth (playlist->entries, i);
+    duration += entry->duration;
+  }
+
+  return duration;
+}
+
+GList *
 gst_m3u8_playlist_add_entry (GstM3U8Playlist * playlist,
     gchar * path, GFile * file, gchar * title,
     gfloat duration, guint length, guint offset, guint index,
@@ -181,14 +197,17 @@ gst_m3u8_playlist_add_entry (GstM3U8Playlist * playlist,
       GstM3U8Entry *old_entry;
 
       old_entry = g_queue_pop_head (playlist->entries);
+      g_object_ref (old_entry->file);
+      old_files = g_list_prepend (old_files, old_entry->file);
       gst_m3u8_entry_free (old_entry);
+
     }
   }
 
   playlist->sequence_number = index + 1;
   g_queue_push_tail (playlist->entries, entry);
 
-  return TRUE;
+  return old_files;
 }
 
 static void
