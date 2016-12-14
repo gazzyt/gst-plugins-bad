@@ -211,17 +211,6 @@ gst_m3u8_playlist_add_entry (GstM3U8Playlist * playlist,
   return old_files;
 }
 
-static void
-render_entry (GstM3U8Entry * entry, GstM3U8Playlist * playlist)
-{
-  gchar *entry_str;
-
-  entry_str = gst_m3u8_entry_render (entry, playlist->version,
-      !playlist->chunked);
-  g_string_append_printf (playlist->playlist_str, "%s", entry_str);
-  g_free (entry_str);
-}
-
 gchar *
 gst_m3u8_playlist_render (GstM3U8Playlist * playlist)
 {

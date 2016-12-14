@@ -23,7 +23,7 @@
 #define __GST_M3U8_PLAYLIST_H__
 
 #include <glib.h>
-#include <glib/gstdio.h>
+#include <gio/gio.h>
 
 G_BEGIN_DECLS
 

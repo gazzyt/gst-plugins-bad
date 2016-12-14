@@ -4,7 +4,6 @@ plugin_LTLIBRARIES = libgsthls.la
 libgsthls_la_SOURCES =			\
 	m3u8.c					\
 	gsthlsdemux.c				\
-<<<<<<< cd8539cff501be47229967f3a891fd86633b8064
 	gsthlsdemux-util.c  \
 	gsthlsplugin.c 			\
 	gsthlssink.c 				\
