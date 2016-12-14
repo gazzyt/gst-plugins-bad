@@ -152,7 +152,7 @@ gst_m3u8_manager_add_fragment (GstStreamsManager * bmanager,
 
   *removed_fragments =
       gst_m3u8_playlist_add_entry (playlist, meta->name, meta->file,
-      bmanager->title, ((gfloat) duration) / GST_SECOND,
+      bmanager->title, (gfloat) duration,
       gst_buffer_get_size (fragment), GST_BUFFER_OFFSET (fragment), meta->index,
       meta->discontinuous);
   *rep_file =
